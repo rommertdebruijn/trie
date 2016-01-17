@@ -35,7 +35,7 @@ public class Node<T> implements Trie<T> {
 
     private void insert(String word, List<T> newValues) {
         Optional<Node<T>> childMatchingWordOpt = getChildMatchingString(word);
-        // exact match with existing leaf node: add new values to list with existing values
+        // exact match wit node: add new values to list with existing values
         if (childMatchingWordOpt.isPresent()) {
             childMatchingWordOpt.get().getValues().addAll(newValues);
             return;
@@ -46,21 +46,19 @@ public class Node<T> implements Trie<T> {
         Optional<Node<T>> childMatchingFirstLetter = getChildMatchingString(firstLetter);
         if (childMatchingFirstLetter.isPresent()) {
             Node<T> childMatchingLetter = childMatchingFirstLetter.get();
-            if (childMatchingLetter.isLeaf()) {
-                addNode(word, newValues);
-            } else {
-                childMatchingLetter.insert(tail(word), newValues);
-            }
+            childMatchingLetter.insert(tail(word), newValues);
             return;
         }
 
         // a leaf node exists that starts with the first letter of w but is not equal to w (if this node was equal to w it would match the first check)
         Optional<Node<T>> leafOpt = getLeafStartingWithLetter(firstLetter);
         if (leafOpt.isPresent()) {
+            Node<T> leaf = leafOpt.get();
             if (word.length() == 1) {
                 addNode(word, newValues);
+                drop(leaf);
+                insert(leaf.getName(), leaf.getValues());
             } else {
-                Node<T> leaf = leafOpt.get();
                 Node<T> intermediate = addNode(firstLetter);
                 intermediate.insert(tail(leaf.getName()), leaf.getValues());
                 intermediate.insert(tail(word), newValues);
@@ -92,7 +90,14 @@ public class Node<T> implements Trie<T> {
         // when a node is found that matches the given word, remove that node. Then, tidy up the tree
         Optional<Node<T>> childMatchingWord = getChildMatchingString(word);
         if (childMatchingWord.isPresent()) {
-            drop(childMatchingWord.get());
+            Node<T> match = childMatchingWord.get();
+            match.getValues().clear();
+            if (match.getNrOfValueNodes() == 0) {
+                drop(match);
+            } else if (getNrOfValueNodes() == 1) {
+                Node<T> onlyValueNodeLeft = findOnlyValueNode();
+                onlyValueNodeLeft.collapse();
+            }
             collapse();
             return;
         }
@@ -103,6 +108,16 @@ public class Node<T> implements Trie<T> {
         if (childMatchingFirstLetter.isPresent()) {
             childMatchingFirstLetter.get().delete(tail(word));
         }
+    }
+
+    private Node<T> findOnlyValueNode() {
+        for (Node<T> child : children.values()) {
+            if (!child.getValues().isEmpty()) {
+                return child;
+            }
+            return child.findOnlyValueNode();
+        }
+        throw new IllegalStateException("should only be called on trees that have nrOfValueNodes == 1");
     }
 
     @Override
@@ -144,14 +159,18 @@ public class Node<T> implements Trie<T> {
      * is encountered
      */
     private void collapse() {
-        if (parent == null || getNrOfLeafs() > 1) { //cant collapse top of tree, or tree that has multiple leafs
+        //cant collapse top of tree, or tree that has multiple values, or tree has no children left after delete
+        if (parent == null || getNrOfValueNodes() > 1) {
             return;
         }
 
-        Node<T> onlyChild = new ArrayList<>(children.values()).get(0); // last child
-        String newName = name + onlyChild.getName();
-        parent.addNode(newName, onlyChild.getValues());
-        parent.drop(this);
+        Optional<Node<T>> onelyChildOpt = children.values().stream().findFirst();
+        if (onelyChildOpt.isPresent()) {
+            Node<T> onlyChild = onelyChildOpt.get(); // last child
+            String newName = name + onlyChild.getName();
+            parent.addNode(newName, onlyChild.getValues());
+            parent.drop(this);
+        }
         parent.collapse();
     }
 
@@ -185,21 +204,22 @@ public class Node<T> implements Trie<T> {
         return node;
     }
 
-    private Node<T> addNode(String name, List<T> values) {
-        Node<T> node = new Node<>(name, values);
+    private Node<T> addNode(String name, List<T> newValues) {
+        Node<T> node = new Node<>(name, newValues);
         node.parent = this;
         children.put(node.getName(), node);
         return node;
     }
 
     private boolean isLeaf() {
-        return !values.isEmpty() && children.size() == 0;
+        return children.size() == 0;
     }
 
-    protected int getNrOfLeafs() {
-        return children.values().stream()
-                .mapToInt(child -> child.isLeaf() ? 1 : child.getNrOfLeafs())
+    protected int getNrOfValueNodes() {
+        int nrOfValueNodesInChildren = children.values().stream()
+                .mapToInt(Node::getNrOfValueNodes)
                 .sum();
+        return !values.isEmpty() ? nrOfValueNodesInChildren + 1 : nrOfValueNodesInChildren;
     }
 
     protected String getName() {
@@ -228,17 +248,16 @@ public class Node<T> implements Trie<T> {
         for (int i=0;i<level;i++) {
             output.append("    ");
         }
-        if (children.isEmpty()) {
-            output.append(name)
-                    .append(":")
-                    .append(values);
-        } else {
-            output.append(name).append(":\n");
-            List<Node<T>> sortedChildren = getSortedChildren();
-            for (Node<T> node : sortedChildren) {
-                output.append(node.toString(level + 1));
-                output.append("\n");
-            }
+        output.append(name);
+        if (!values.isEmpty()) {
+            output.append(values);
+        }
+        output.append(":\n");
+
+        List<Node<T>> sortedChildren = getSortedChildren();
+        for (Node<T> node : sortedChildren) {
+            output.append(node.toString(level + 1));
+            output.append("\n");
         }
         return output.toString();
     }

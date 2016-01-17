@@ -1,11 +1,13 @@
 package org.rommert.trie.impl;
 
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
 
 import static org.junit.Assert.assertEquals;
+
 
 @SuppressWarnings("SpellCheckingInspection")
 public class NodeTest {
@@ -22,7 +24,7 @@ public class NodeTest {
         Node<Integer> root = new Node<>();
         root.insert("vos", 13);
         System.out.println(root.toString());
-        assertEquals(1, root.getNrOfLeafs());
+        assertEquals(1, root.getNrOfValueNodes());
     }
 
     @Test
@@ -34,7 +36,7 @@ public class NodeTest {
         root.insert("voornamelijk", 23);
 
         System.out.println(root.toString());
-        assertEquals(4, root.getNrOfLeafs());
+        assertEquals(4, root.getNrOfValueNodes());
     }
 
     @Test
@@ -47,7 +49,7 @@ public class NodeTest {
         root.insert("voornemens", 3);
 
         System.out.println(root.toString());
-        assertEquals(2, root.getNrOfLeafs());
+        assertEquals(2, root.getNrOfValueNodes());
     }
 
     @Test
@@ -85,12 +87,12 @@ public class NodeTest {
         root.insert("voornemens", 3);
 
         System.out.println(root.toString());
-        assertEquals(3, root.getNrOfLeafs());
+        assertEquals(3, root.getNrOfValueNodes());
 
         root.delete("voornemens");
 
         System.out.println(root.toString());
-        assertEquals(2, root.getNrOfLeafs());
+        assertEquals(2, root.getNrOfValueNodes());
     }
 
     @Test
@@ -99,7 +101,7 @@ public class NodeTest {
         root.insert("lui", 23);
 
         System.out.println(root.toString());
-        assertEquals(2, root.getNrOfLeafs());
+        assertEquals(2, root.getNrOfValueNodes());
     }
 
     @Test
@@ -108,49 +110,72 @@ public class NodeTest {
         root.insert("deze", 23);
 
         System.out.println(root.toString());
-        assertEquals(2, root.getNrOfLeafs());
+        assertEquals(2, root.getNrOfValueNodes());
+    }
+
+    @Test
+    public void testMultiBranchedTree() {
+        root.insert("werk", 14);
+        root.insert("werken", 5); // branch on e
+        root.insert("werkelijk", 23); // branch on l
+        root.insert("werkeloos", 183);
+
+        System.out.println(root.toString());
     }
 
     @Test
     public void testDeleteFromRoot() {
         root.insert("weinig", 123);
         root.delete("weinig");
-        assertEquals(0, root.getNrOfLeafs());
+        assertEquals(0, root.getNrOfValueNodes());
     }
 
     @Test
     public void testDeleteNonExistingLeaf() {
         root.insert("weinig", 123);
         root.delete("veel");
-        assertEquals(1, root.getNrOfLeafs());
+        assertEquals(1, root.getNrOfValueNodes());
     }
 
     @Test
-    public void testRemoveLongerWordFirst() {
+    public void testDeleteLongerWordFirst() {
         root.insert("stof", 123);
         root.insert("stoffig", 45);
         root.delete("stoffig");
         System.out.println(root.toString());
-        assertEquals(1, root.getNrOfLeafs());
+        assertEquals(1, root.getNrOfValueNodes());
     }
 
     @Test
-    public void testRemoveShorterWordFirst() {
+    public void testDeleteShorterWordFirst() {
         root.insert("stof", 123);
         root.insert("stoffig", 45);
         root.delete("stof");
         System.out.println(root.toString());
-        assertEquals(1, root.getNrOfLeafs());
+        assertEquals(1, root.getNrOfValueNodes());
     }
 
     @Test
-    public void testRemoveFromBranchingRoot() {
+    public void testDeleteFromBranchingRoot() {
         root.insert("stof", 123);
         root.insert("stoffig", 45);
         root.insert("storing", 3);
         root.delete("stoffig");
         System.out.println(root.toString());
-        assertEquals(2, root.getNrOfLeafs());
+        assertEquals(2, root.getNrOfValueNodes());
+    }
+
+    @Test
+    public void testDeleteFromChain() {
+        root.insert("la", 14);
+        root.insert("lak", 3); // branch on e
+        root.insert("laks", 73); // branch on l
+        root.insert("lakschade", 23);
+
+        System.out.println(root.toString());
+
+        root.delete("laks");
+        System.out.println(root.toString());
     }
 
     @Test
@@ -160,7 +185,6 @@ public class NodeTest {
         root.insert("verdraaid", 3);
         root.delete("verhaal");
         System.out.println(root.toString());
-
     }
 
     @Test
@@ -185,7 +209,7 @@ public class NodeTest {
 
         //expect a full tree. Expect the nr of leafs to reflect the number of unique words
         System.out.println(root.toString());
-        assertEquals(allDistinctWords.size(), root.getNrOfLeafs());
+        assertEquals(allDistinctWords.size(), root.getNrOfValueNodes());
 
         // delete all words, at random
         List<String> shuffeled = new ArrayList<>(allDistinctWords);
@@ -194,7 +218,7 @@ public class NodeTest {
 
         // expect an empty root node
         System.out.println(root.toString());
-        assertEquals(0, root.getNrOfLeafs());
+        assertEquals(0, root.getNrOfValueNodes());
     }
 
     @Test
