@@ -94,8 +94,8 @@ public class Node<T> implements Trie<T> {
             match.getValues().clear();
             if (match.getNrOfValueNodes() == 0) {
                 drop(match);
-            } else if (getNrOfValueNodes() == 1) {
-                Node<T> onlyValueNodeLeft = findOnlyValueNode();
+            } else if (match.getNrOfValueNodes() == 1) {
+                Node<T> onlyValueNodeLeft = match.findOnlyValueNode();
                 onlyValueNodeLeft.collapse();
             }
             collapse();

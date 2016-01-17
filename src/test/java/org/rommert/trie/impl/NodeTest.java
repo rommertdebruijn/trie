@@ -73,6 +73,24 @@ public class NodeTest {
     }
 
     @Test
+    public void testContainedWord() {
+        root.insert("los", 14);
+        root.insert("losbol", 23);
+        List<Integer> expected = Arrays.asList(14);
+        List<Integer> actual = root.search("los");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testNonWordSubstring() {
+        root.insert("los", 14);
+        root.insert("losbol", 23);
+        List<Integer> expected = Collections.emptyList();
+        List<Integer> actual = root.search("losb");
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void testSearchNonExistingWord() {
         root.insert("vos", 14);
         List<Integer> expected = Collections.emptyList();
@@ -161,6 +179,16 @@ public class NodeTest {
         root.insert("stoffig", 45);
         root.insert("storing", 3);
         root.delete("stoffig");
+        System.out.println(root.toString());
+        assertEquals(2, root.getNrOfValueNodes());
+    }
+
+    @Test
+    public void testDeleteShortestWordFromBranchingRoot() {
+        root.insert("stof", 123);
+        root.insert("stoffig", 45);
+        root.insert("storing", 3);
+        root.delete("stof");
         System.out.println(root.toString());
         assertEquals(2, root.getNrOfValueNodes());
     }
